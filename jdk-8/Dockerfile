@@ -1,29 +1,14 @@
-FROM buildpack-deps:buster
+FROM ikus060/docker-wine:buster
 
 # jre-8u231-windows-x64.exe
-ARG JRE_URL=https://javadl.oracle.com/webapps/download/AutoDL?BundleId=240726_5b13a193868b4bf28bcb45c792fce896
 ARG JDK_URL=https://github.com/frekele/oracle-java/releases/download/8u212-b10/jdk-8u212-windows-i586.exe
 ARG MVN_URL=http://apache.mirror.vexxhost.com/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
-
-ENV DEBIAN_FRONTEND noninteractive
-
-# wine settings
-ENV WINEPREFIX /wine-prefix
-ENV WINEARCH   win32
-ENV WINEDEBUG  fixme-all
-
-# we need wine for this all to work, so we'll use the PPA
-RUN set -x \
-    && dpkg --add-architecture i386 && apt-get update && apt-get install -y --no-install-recommends wine wine32 xvfb xauth cabextract winbind fonts-wine dos2unix \
-    && apt-get clean \
-    && wget -nv -O /usr/local/bin/winetricks 'https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks' \
-    && chmod +x /usr/local/bin/winetricks \
-    && wineboot -u \
-    && winetricks win7
 
 # Install java
 # https://docs.oracle.com/javase/8/docs/technotes/guides/install/config.html#installing_with_config_file
 RUN set -x \
+    && wineboot -u \
+    && winetricks win7 \
     && wget -nv -O "jdk_setup.exe" "$JDK_URL" \
     && (Xvfb :99 &) && export DISPLAY=:99 \
     && wine "jdk_setup.exe" /s REBOOT=Disable AUTO_UPDATE=0 WEB_JAVA=0 WEB_ANALYTICS=0 INSTALLDIR=C:\\java\\jdk /L "jdk_setup.log" \
@@ -43,6 +28,7 @@ ENV WINEPATH="C:\maven\bin;C:\java\jdk\bin;C:\windows\system32;C:\windows;C:\win
 # Install maven
 ADD mvn.cmd.patch /mvn.cmd.patch
 RUN set -x \
+    && apt-get update && apt-get install -y --no-install-recommends dos2unix && apt-get clean \
     && wget -nv -O apache-maven.tar.gz "$MVN_URL" \
     && mkdir "$WINEPREFIX/drive_c/maven" \
     && tar -C "$WINEPREFIX/drive_c/maven" -zxvf apache-maven.tar.gz --strip 1 \

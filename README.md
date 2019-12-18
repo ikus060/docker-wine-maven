@@ -23,7 +23,7 @@ passing a Maven command to `docker run`:
 
 ### Linux
 
-    docker run -it --rm --name my-maven-project -v "$(pwd)":/project -w /project ikus060/docker-wine-maven:3-jdk-8 mvn verify
+    docker run -it --rm -v "$(pwd)":/project -w /project ikus060/docker-wine-maven:3-jdk-8 mvn verify
     
 # License
 
